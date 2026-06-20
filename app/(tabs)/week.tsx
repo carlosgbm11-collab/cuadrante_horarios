@@ -1,5 +1,6 @@
 import { addWeeks, format, startOfWeek, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
 import { useTheme } from '../../lib/themeContext';
 import { WeekView } from '../../components/WeekView';
 import { getDaySchedule } from '../../lib/schedule';
+import { exportScheduleToPdf } from '../../lib/exportPdf';
 import {
   useCycleStart,
   useMonthOverrides,
@@ -24,6 +26,7 @@ export default function WeekScreen() {
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(today, { weekStartsOn: 1 })
   );
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const year = weekStart.getFullYear();
   const month = weekStart.getMonth() + 1;
@@ -44,6 +47,16 @@ export default function WeekScreen() {
 
   const weekLabel = format(weekStart, "'Semana del' d 'de' MMMM", { locale: es });
 
+  const handleExportPdf = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      await exportScheduleToPdf(weekDays, weekLabel);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgScreen }]}>
       <View style={[styles.header, { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
@@ -52,12 +65,22 @@ export default function WeekScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={[styles.weekLabel, { color: colors.text }]}>{weekLabel}</Text>
-          <Pressable
-            style={[styles.todayBtn, { backgroundColor: colors.primaryBg }]}
-            onPress={() => setWeekStart(startOfWeek(today, { weekStartsOn: 1 }))}
-          >
-            <Text style={[styles.todayBtnText, { color: colors.primary }]}>Hoy</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              style={[styles.todayBtn, { backgroundColor: colors.primaryBg }]}
+              onPress={() => setWeekStart(startOfWeek(today, { weekStartsOn: 1 }))}
+            >
+              <Text style={[styles.todayBtnText, { color: colors.primary }]}>Hoy</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.pdfBtn, exportingPdf && { opacity: 0.5 }]}
+              onPress={handleExportPdf}
+              disabled={exportingPdf}
+            >
+              <Ionicons name="document-outline" size={15} color="#FFFFFF" />
+              <Text style={styles.pdfBtnText}>PDF</Text>
+            </Pressable>
+          </View>
         </View>
         <Pressable style={[styles.navBtn, { backgroundColor: colors.navBtnBg }]} onPress={() => setWeekStart((w) => addWeeks(w, 1))}>
           <Text style={[styles.navBtnText, { color: colors.navBtnText }]}>›</Text>
@@ -106,4 +129,15 @@ const styles = StyleSheet.create({
   },
   todayBtnText: { fontSize: 12, color: '#2563EB', fontWeight: '600' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  pdfBtnText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
 });
