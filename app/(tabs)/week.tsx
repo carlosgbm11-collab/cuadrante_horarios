@@ -13,7 +13,7 @@ import {
 import { useTheme } from '../../lib/themeContext';
 import { WeekView } from '../../components/WeekView';
 import { getDaySchedule } from '../../lib/schedule';
-import { exportScheduleToPdf } from '../../lib/exportPdf';
+import { exportWeekToPdf } from '../../lib/exportPdf';
 import {
   useCycleStart,
   useMonthOverrides,
@@ -51,7 +51,7 @@ export default function WeekScreen() {
     if (exportingPdf) return;
     setExportingPdf(true);
     try {
-      await exportScheduleToPdf(weekDays, weekLabel);
+      await exportWeekToPdf(weekDays, weekLabel);
     } finally {
       setExportingPdf(false);
     }
